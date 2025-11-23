@@ -1,11 +1,11 @@
-    # Connefcts everything
-    # from importlib.metadata import Prepared
+    # Connects everything
+    # High-level pipeline orchetrator for the model
     import pandas as pd
 
-    from src.DataExtraction.data_extraction import DataExtraction
+    from src.DataExtraction.data_extraction import data_extraction
     from src.DataPreperation.preprocess_text import DataPreperation
-    from DataPreperation.SyntheticData import SyntheticData
-    from ModelTraining.RegressionModel import RegressionModel
+
+    from ModelTraining.placeholder_model import Model
     from src.Alerts.alert_detection import AlertDetection
 
 
