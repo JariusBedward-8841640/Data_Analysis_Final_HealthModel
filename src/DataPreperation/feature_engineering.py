@@ -74,5 +74,38 @@ def  encode_cols(df: pd.DataFrame, cols: list) -> pd.DataFrame:
 
 
     # infer dibaetes by sugar
+def diabetes_inference (df: pd.DataFrame, sugar_col: str = "Sugar", diabets_col_candiate: list = None, sugar_threshold: float = 150.0) -> pd.DataFrame:
+    #Create & or uodate Diabetes
+    #sugar threshold is 150g by default
+
+
+    #Looks to find diabetes column if it exists
+    if diabets_col_candiate is None:
+        diabets_col_candiate = ["Diabetes", "Has_Diabetes", "Diabetic", "diabetes"]
+    diabetes_col = None
+    for cols in diabets_col_candiate:
+        if cols in df.columns:
+            diabetes_col = cols
+            break
+    if diabetes_col:
+        df["Diabetes"] = df[diabetes_col].apply(lambda x: 1 if str(x).strip().lower() in ("1", "yes", "true", "y", "t") else 0)
+    else:
+        df["Diabetes"] = 0
+
+    if sugar_col in df.columns:
+        df.loc[df[sugar_col] < sugar_threshold, "Diabetes"] = 1
+    return df
+
+
 
     #final pipeline feature engineer
+
+def feature_pipeline(df: pd.DataFrame) -> pd.DataFrame:
+    #Put the pipeline together
+
+    df = add_bmi(df)
+    df =  encode_gender(df)
+    df = add_obesity(df)
+    df = encode_cols(df, cols=["Activity Level", "Dietary Preference"])
+    df = diabetes_inference(df, sugar_col="Sugar")
+    return df
