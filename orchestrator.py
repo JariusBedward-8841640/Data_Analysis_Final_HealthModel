@@ -1,50 +1,47 @@
     # Connects everything
     # High-level pipeline orchetrator for the model
-    import pandas as pd
+import pprint
 
-    from src.DataExtraction.data_extraction import data_extraction
-    from src.DataPreperation.preprocess_text import DataPreperation
+from src.DataExtraction import load_raw_data
+from src.DataPreperation.clean_data import clean_pipeline
+from src.DataPreperation.feature_engineering import feature_pipeline
+from src.Evaluation.metrics import eda_pipeline
+from src.ModelTraining.train_model import split_save, detect_target_col
 
-    from ModelTraining.placeholder_model import Model
-    from src.Alerts.alert_detection import AlertDetection
+
+def main():
+    #load raw set
+    df_raw = load_raw_data()
+    print(f"Raw shape: {df_raw.shape}")
 
 
-    query = """
-    SELECT "timestamp", "part_id", "reading"
-    FROM "catdc_data_feed"
-    WHERE "state"='RUNNING';
-    """
-    #Extract data
-    extractor = DataExtraction()
-    df_long = extractor.load_data(query)
+    #clean data
+    df_clean = clean_pipeline(df_raw, do_impute=True)
+    print(f"Cleaned shape: {df_clean.shape}")
 
-    # pivot to wude format
-    df_train = df_long.pivot_table(index='timestamp', columns='part_id', values='reading', aggfunc='mean')
-    df_train.columns = [f"Axis #{i}" for i in df_train.columns]
-    df_train.reset_index(inplace=True)
-    df_train.rename(columns={"timestamp": "Time"}, inplace=True)
+    #EDA (reports)
+    eda_results = eda_pipeline(df_clean, categorical_cols=["Gender", "Activity Level", "Dietary Preference"])
+    print("Top missing columns:")
+    print(eda_results["missing_report"].head(10))
 
-    # prepare the data
-    prep = DataPreperation(df_train)
-    df_clean = prep.clean_data()
-    df_norm = prep.normalize()
-    df_std = prep.standardize()
+    #Feature engineering
+    df_feature = feature_pipeline(df_clean)
+    print(f"Feature shape: {df_feature.shape}")
 
-    # Model
+    # Detect target col to decide stratify
+    target_col = detect_target_col(df_feature, candidates=["HeartAttack", "Heart_Attack", "HasHeartAttack", "Target"])
+    print("Detected target col:",  target_col)
 
-    #
-    #Alerts
+    #Split datasets and save csv
+    train_path, val_path, test_path = split_save(df=df_feature, target_col=target_col)
+    print("Saved train/val/test to:", train_path, val_path, test_path)
 
-    alerts = AlertDetection(models, prep.axis_cols)
-    residuals_synth = alerts.compute_residuals()
-    thresholds = alerts.define_thresholds()
-    alerts_df = alerts.detect_alerts()
-    alerts.plot_with_alerts(df_clean)
+    # pretty print small eda results for fast access
+    pp = pprint.PrettyPrinter(indent=4)
+    print("Cateogircal count: ")
+    for k, val in eda_results["categorical_value_counts"].items():
+        print(f"\n==={k} ===")
+        print(val.head(10))
 
-    # Save results
-
-    thresholds_df = pd.DataFrame.from_dict(thresholds, orient='index')
-    thresholds.to_csv("data/processed/results_thresholds.csv", index_label="Axis")
-    alerts_df.to_csv("data/processed/results_detected_events.csv", index=False)
-    print("Results saved in the data folder successfully!")
-
+if __name__ == "__main__":
+    main()
