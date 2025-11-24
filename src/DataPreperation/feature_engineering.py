@@ -43,7 +43,7 @@ def add_obesity(df: pd.DataFrame, bmi_col: str ="BMI") -> pd.DataFrame:
 #Male: BMI >= 30 -> Obese
 #Female: BMI >- 28 > obese
 
-    def obese_row(row)
+    def obese_row(row):
         bmi = row.get(bmi_col, np.nan)
         gender = row.get("Gender", "Other")
         try:
