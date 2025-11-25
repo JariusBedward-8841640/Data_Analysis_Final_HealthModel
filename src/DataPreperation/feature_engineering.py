@@ -97,6 +97,25 @@ def diabetes_inference (df: pd.DataFrame, sugar_col: str = "Sugar", diabets_col_
     return df
 
 
+#RIsk score weights and values subject to change based on research right now these are place holder values
+def risk_score(df):
+    df["Risk_BMI"] = df["BMI"].apply(lambda x: 1 if x >= 30 else 0)
+
+    df["Risk_Alcohol"] = df["alcohol_use"].apply(lambda x: 1 if x == 1 else 0)
+    df["Risk_Sugar"] = df["Sugar"].apply(lambda x: 1 if x > 130 else 0)
+    df["Risk_Sodium"] = df["Sodium"].apply(lambda x: 1 if x == 2300 else 0)
+
+    df["Risk_Activity"] = df["activity_level"].apply(lambda lvl: 1 if lvl =="Sedentary" else 0)
+
+    #place holder values till further research is done
+    df["Risk_Score"] = (
+        0.25 * df["Risk_BMI"] +
+        0.15 * df["Risk_Alcohol"] +
+        0.15 * df["Risk_Sugar"] +
+        0.10 * df["Risk_Sodium"] +
+        0.15 * df["Risk_Activity"]
+    )
+    return df
 
     #final pipeline feature engineer
 
